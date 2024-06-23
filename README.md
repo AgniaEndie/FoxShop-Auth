@@ -1,0 +1,1 @@
+### AuthService of FoxShop developed by FoxStudios in 2024
