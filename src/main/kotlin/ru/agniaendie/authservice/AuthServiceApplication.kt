@@ -7,5 +7,7 @@ import org.springframework.boot.runApplication
 class AuthServiceApplication
 
 fun main(args: Array<String>) {
+	println(System.getenv("DB_NAME"))
+
 	runApplication<AuthServiceApplication>(*args)
 }
