@@ -1,11 +1,5 @@
 FROM gradle:jdk21-alpine as build
 
-ARG DB_USER
-ENV env_user $DB_USER
-ARG DB_NAME
-ENV env_name $name
-ARG DB_PASS
-ENV env_pass $DB_PASS
 WORKDIR /tmp
 COPY . /tmp
 
