@@ -39,6 +39,10 @@ jobs:
       - name: Build and push Docker image
         id: push
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        env:
+          DB_USER=test
+          DB_NAME=test1
+          DB_PASS=test2
         with:
           context: .
           file: ./Dockerfile
