@@ -5,5 +5,5 @@ import org.springframework.stereotype.Repository
 import ru.agniaendie.authservice.model.AuthModel
 
 @Repository
-interface AuthRepository : ReactiveCrudRepository<String,AuthModel> {
+interface AuthRepository : ReactiveCrudRepository<AuthModel,String> {
 }

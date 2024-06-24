@@ -32,5 +32,4 @@ class JwtFilter(@Autowired var jwtService: JwtService) : OncePerRequestFilter() 
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED)
         }
     }
-
 }
