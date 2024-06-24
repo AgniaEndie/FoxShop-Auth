@@ -3,10 +3,13 @@ FROM gradle:jdk21-alpine as build
 ARG DB_USER=test
 ARG DB_NAME=test
 ARG DB_PASS=test
+ARG SR_JWT=test
+
 
 ENV DB_USER $DB_USER
 ENV DB_NAME $DB_NAME
 ENV DB_PASS $DB_PASS
+ENV SR_JWT $SR_JWT
 
 WORKDIR /tmp
 COPY . /tmp
