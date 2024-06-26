@@ -1,4 +1,4 @@
-create table auth (
+create table auth_model (
     uuid varchar(256) primary key,
     username varchar(256),
     password varchar(256),
