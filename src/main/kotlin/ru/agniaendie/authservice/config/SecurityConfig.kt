@@ -5,7 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.annotation.web.builders.WebSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.access.AccessDeniedHandlerImpl
@@ -20,15 +22,13 @@ class SecurityConfig(@Autowired var jwtFilter: JwtFilter) {
         http.csrf { t -> t.disable() }.cors { t -> t.disable() }.authorizeHttpRequests { requests ->
             requests.requestMatchers(
                 "/",
-                "/api/auth/create-user",
-                "/api/auth/authenticate",
-                "/api/auth/refresh-recreation"
             ).permitAll()
                 .anyRequest().authenticated()
         }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .anonymous { it.disable() }
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java).exceptionHandling { exception ->
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
+            .exceptionHandling { exception ->
                 exception
                     .accessDeniedHandler(AccessDeniedHandlerImpl())
             }.securityContext { securityContext -> securityContext.requireExplicitSave(false) }
@@ -36,4 +36,13 @@ class SecurityConfig(@Autowired var jwtFilter: JwtFilter) {
         return http.build()
     }
 
+    @Bean
+    fun webSecurityCustomizer(): WebSecurityCustomizer {
+        return WebSecurityCustomizer { web: WebSecurity ->
+            web.ignoring().requestMatchers(
+                "/api/auth/create-user", "/api/auth/authenticate",
+                "/api/auth/refresh-recreation"
+            )
+        }
+    }
 }
