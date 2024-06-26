@@ -16,20 +16,26 @@ class JwtFilter(@Autowired var jwtService: JwtService) : OncePerRequestFilter() 
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
+        logger.error("rere")
         if (request.headerNames.toList().contains("Authorization")) {
             if (request.getHeader(HttpHeaders.AUTHORIZATION).startsWith("Bearer ")) {
                 val token = request.getHeader(HttpHeaders.AUTHORIZATION).substringAfter("Bearer ")
                 if (jwtService.validateToken(token)) {
+                    logger.error("here")
                     filterChain.doFilter(request, response)
                 } else {
+                    logger.error("here1")
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED)
                 }
 
             } else {
+                logger.error("here2")
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED)
             }
         } else {
+            logger.error("here3")
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED)
         }
+        filterChain.doFilter(request, response)
     }
 }
