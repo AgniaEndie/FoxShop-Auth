@@ -15,7 +15,7 @@ class SecurityConfig(@Autowired var jwtFilter: JwtFilter) {
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http.authorizeHttpRequests { requests ->
-            requests.requestMatchers("/", "/test").permitAll()
+            requests.requestMatchers("/", "/create-user","/authenticate","/refresh-recreation").permitAll()
                 .anyRequest().authenticated()
         }.addFilterAfter(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
         return http.build()
