@@ -23,7 +23,7 @@ ENV SR_ZONE_ID $SR_ZONE_ID
 WORKDIR /tmp
 COPY . /tmp
 
-RUN gradle build
+RUN gradle bootJar
 
 FROM eclipse-temurin:21 as production
 COPY --from=build /tmp/build/libs/AuthService-0.0.1-SNAPSHOT.jar .
