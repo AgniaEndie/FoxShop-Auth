@@ -19,6 +19,4 @@ interface AuthRepository : ReactiveCrudRepository<AuthModel, String> {
     @Transactional
     fun deleteByUuid(uuid: String): Mono<Void>
 
-    @Transactional
-    fun updateAuthModel(authModel: AuthModel): Mono<AuthModel>
 }
