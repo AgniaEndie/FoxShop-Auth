@@ -2,7 +2,7 @@ create table auth_model (
     uuid varchar(256) primary key,
     username varchar(256),
     password varchar(256),
-    role integer,
+    role varchar(25),
     email varchar(256) unique
 );
 
