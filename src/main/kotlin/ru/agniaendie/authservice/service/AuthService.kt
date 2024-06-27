@@ -29,7 +29,7 @@ class AuthService(
 ) {
 
     @Transactional
-    suspend fun createAuthModel(request: CreateAuthModelRequest): Mono<AuthModel> {
+    fun createAuthModel(request: CreateAuthModelRequest): Mono<AuthModel> {
         return authRepository.save(AuthModel(null, request.username, request.password, Role.ROLE_NORMAL, request.email))
     }
 

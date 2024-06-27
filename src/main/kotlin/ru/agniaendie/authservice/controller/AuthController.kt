@@ -22,7 +22,7 @@ import ru.agniaendie.authservice.service.AuthService
 class AuthController(@Autowired val authService: AuthService) {
     @PostMapping("/create-user")
     @Transactional
-    suspend fun createAuthModel(@RequestBody request: CreateAuthModelRequest): Mono<AuthModel> {
+    fun createAuthModel(@RequestBody request: CreateAuthModelRequest): Mono<AuthModel> {
         return authService.createAuthModel(request)
     }
 
