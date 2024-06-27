@@ -1,11 +1,12 @@
 package ru.agniaendie.authservice.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import lombok.Data
 import org.springframework.data.annotation.Id
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 
-
+@Data
 data class AuthModel(@Id var uuid: String?, @JvmField var username: String?, @JvmField var password: String, var role: Role, var email:String) : UserDetails {
     override fun getAuthorities(): List<SimpleGrantedAuthority> {
         return listOf(SimpleGrantedAuthority(role.name))
