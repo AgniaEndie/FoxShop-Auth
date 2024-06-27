@@ -2,6 +2,7 @@ package ru.agniaendie.authservice.controller
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.ResponseEntity
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -20,8 +21,8 @@ import ru.agniaendie.authservice.service.AuthService
 @RequestMapping("/api/auth")
 class AuthController(@Autowired val authService: AuthService) {
     @PostMapping("/create-user")
+    @Transactional
     suspend fun createAuthModel(@RequestBody request: CreateAuthModelRequest): Mono<AuthModel> {
-        logger.error("test")
         return authService.createAuthModel(request)
     }
 
