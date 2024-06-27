@@ -28,11 +28,9 @@ class AuthService(
     @Autowired val refreshRepository: RefreshRepository
 ) {
 
-
+    @Transactional
     suspend fun createAuthModel(request: CreateAuthModelRequest): Mono<AuthModel> {
-        val user =
-            AuthModel(null, request.username, request.password, Role.ROLE_NORMAL, request.email)
-        return authRepository.save(user)
+        return authRepository.save(AuthModel(null, request.username, request.password, Role.ROLE_NORMAL, request.email))
     }
 
     suspend fun authenticate(request: AuthenticationAuthModelRequest): Result<ResponseEntity<AuthenticateResponse>> {
