@@ -31,7 +31,7 @@ class AuthService(
 
     suspend fun createAuthModel(request: CreateAuthModelRequest): Mono<AuthModel> {
         val user =
-            AuthModel(null, request.username, request.password, Role.ROLE_NORMAL, request.email)
+            AuthModel(UUID.randomUUID().toString(), request.username, request.password, Role.ROLE_NORMAL, request.email)
         return authRepository.save(user)
     }
 
