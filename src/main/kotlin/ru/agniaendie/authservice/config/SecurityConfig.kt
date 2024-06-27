@@ -21,7 +21,8 @@ class SecurityConfig(@Autowired var jwtFilter: JwtFilter) {
     fun securityFilterChain(http: HttpSecurity, httpSession: HttpSession): SecurityFilterChain {
         http.csrf { t -> t.disable() }.cors { t -> t.disable() }.authorizeHttpRequests { requests ->
             requests.requestMatchers(
-                "/",
+                "/api/auth/create-user", "/api/auth/authenticate",
+                "/api/auth/refresh-recreation",
             ).permitAll()
                 .anyRequest().authenticated()
         }
@@ -34,15 +35,5 @@ class SecurityConfig(@Autowired var jwtFilter: JwtFilter) {
             }.securityContext { securityContext -> securityContext.requireExplicitSave(false) }
 
         return http.build()
-    }
-
-    @Bean
-    fun webSecurityCustomizer(): WebSecurityCustomizer {
-        return WebSecurityCustomizer { web: WebSecurity ->
-            web.ignoring().requestMatchers(
-                "/api/auth/create-user", "/api/auth/authenticate",
-                "/api/auth/refresh-recreation"
-            )
-        }
     }
 }
