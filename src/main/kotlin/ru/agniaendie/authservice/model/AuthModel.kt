@@ -6,6 +6,8 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.domain.Persistable
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
+import ru.agniaendie.authservice.logger
+import java.util.*
 
 @Data
 data class AuthModel(
@@ -28,7 +30,13 @@ data class AuthModel(
     }
 
     override fun isNew(): Boolean {
-        return id == null
+        logger.debug(id)
+        if(id == null){
+            uuid = UUID.randomUUID().toString()
+            return true
+        }else{
+            return false
+        }
     }
 
 }
