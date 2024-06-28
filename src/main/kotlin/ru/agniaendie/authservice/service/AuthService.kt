@@ -5,6 +5,7 @@ import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Mono
@@ -25,17 +26,19 @@ import java.util.*
 class AuthService(
     @Autowired val authRepository: AuthRepository,
     @Autowired val jwtService: JwtService,
-    @Autowired val refreshRepository: RefreshRepository
+    @Autowired val refreshRepository: RefreshRepository,
+    @Autowired val passwordEncoder: PasswordEncoder,
 ) {
 
     @Transactional
     fun createAuthModel(request: CreateAuthModelRequest): Mono<AuthModel> {
-        return authRepository.save(AuthModel(null, request.username, request.password, Role.ROLE_NORMAL, request.email))
+        return authRepository.save(AuthModel(null, request.username, passwordEncoder.encode(request.password), Role.ROLE_NORMAL, request.email))
     }
 
     suspend fun authenticate(request: AuthenticationAuthModelRequest): Result<ResponseEntity<AuthenticateResponse>> {
         try {
             val user = authRepository.findByUsername(request.username)
+
             var accessToken = ""
             var refreshToken = ""
             withContext(Dispatchers.IO) {
