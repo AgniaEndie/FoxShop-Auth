@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 import ru.agniaendie.authservice.exception.UnsignedTokenException
 import ru.agniaendie.authservice.logger
 import ru.agniaendie.authservice.model.AuthModel
@@ -43,9 +45,9 @@ class JwtService(
 
         return Jwts.builder().claims(claims).signWith(privateKey).compact()
     }
-
     @Transactional
-    fun generateRefreshToken(user: AuthModel): String {
+    suspend fun generateRefreshToken(user: AuthModel): Mono<String> {
+        logger.error("jwtRefresh")
         val alphanumeric = ('A'..'Z') + ('a'..'z') + ('0'..'9')
         val length = 32
         val refreshToken = buildString {
@@ -60,7 +62,7 @@ class JwtService(
             }
         }
 
-        return refreshToken
+        return refreshToken.toMono()
     }
 
     fun expirationAccessGenerate(): Long {
@@ -93,10 +95,10 @@ class JwtService(
     }
 
     fun extractAllClaims(token: String): Claims {
-        try{
+        try {
             return Jwts.parser().verifyWith(SecretKeySpec(preparePublicKey().toByteArray(), "RSA")).build()
                 .parseSignedClaims(token).payload
-        }catch (e: IllegalArgumentException){
+        } catch (e: IllegalArgumentException) {
             throw UnsignedTokenException("Failed to verify token")
         }
     }

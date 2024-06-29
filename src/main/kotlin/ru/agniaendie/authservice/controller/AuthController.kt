@@ -31,8 +31,8 @@ class AuthController(@Autowired val authService: AuthService) {
         return authService.authenticate(request)
     }
 
-    @PostMapping("/refresh-recreation")
-    suspend fun refreshRecreation(@RequestBody request: RefreshTokenRequest): Result<ResponseEntity<AuthenticateResponse>> {
-        return authService.refreshTokenRecreation(request)
-    }
+//    @PostMapping("/refresh-recreation")
+//    suspend fun refreshRecreation(@RequestBody request: RefreshTokenRequest): Result<ResponseEntity<AuthenticateResponse>> {
+//        return authService.refreshTokenRecreation(request)
+//    }
 }
