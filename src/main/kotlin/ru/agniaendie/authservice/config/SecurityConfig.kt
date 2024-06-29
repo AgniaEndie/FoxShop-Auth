@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
@@ -36,7 +37,7 @@ class SecurityConfig(@Autowired var jwtFilter: JwtFilter) {
                     response.status = 401
                 }
             }.securityContext { securityContext -> securityContext.requireExplicitSave(false) }
-
+            .sessionManagement { sessionManager ->sessionManager.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .build()
     }
 

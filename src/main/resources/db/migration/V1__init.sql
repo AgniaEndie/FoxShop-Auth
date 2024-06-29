@@ -9,7 +9,8 @@ create table auth_model (
 );
 
 create table refresh (
-    uuid varchar(256) primary key,
+    uuid varchar(256) primary key default gen_random_uuid(),
     token varchar(256),
-    person varchar(256)
+    person varchar(256),
+    expired timestamp
 )

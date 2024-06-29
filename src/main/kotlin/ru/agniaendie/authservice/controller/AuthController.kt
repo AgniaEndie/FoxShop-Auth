@@ -3,10 +3,7 @@ package ru.agniaendie.authservice.controller
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.ResponseEntity
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
 import ru.agniaendie.authservice.logger
 import ru.agniaendie.authservice.model.AuthModel
@@ -31,6 +28,10 @@ class AuthController(@Autowired val authService: AuthService) {
         return authService.authenticate(request)
     }
 
+    @GetMapping("/secured")
+    fun securedTest():String{
+        return "OK!"
+    }
 //    @PostMapping("/refresh-recreation")
 //    suspend fun refreshRecreation(@RequestBody request: RefreshTokenRequest): Result<ResponseEntity<AuthenticateResponse>> {
 //        return authService.refreshTokenRecreation(request)

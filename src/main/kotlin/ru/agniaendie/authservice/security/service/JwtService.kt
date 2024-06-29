@@ -5,8 +5,10 @@ import io.jsonwebtoken.Jwts
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.withContext
 import lombok.extern.slf4j.Slf4j
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -15,8 +17,12 @@ import reactor.kotlin.core.publisher.toMono
 import ru.agniaendie.authservice.exception.UnsignedTokenException
 import ru.agniaendie.authservice.logger
 import ru.agniaendie.authservice.model.AuthModel
+import ru.agniaendie.authservice.model.Refresh
+import ru.agniaendie.authservice.repository.RefreshRepository
 import java.security.KeyFactory
 import java.security.spec.PKCS8EncodedKeySpec
+import java.security.spec.RSAPublicKeySpec
+import java.security.spec.X509EncodedKeySpec
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
@@ -32,6 +38,7 @@ class JwtService(
     @Value("\${jwt.access.exp.hours}") val accessExpHours: Long,
     @Value("\${jwt.access.exp.minutes}") val accessExpMinutes: Long,
     @Value("\${jwt.refresh.exp.days}") val refreshExpDays: Long,
+    @Autowired var refreshRepository: RefreshRepository,
 ) {
 
     fun generateAccessToken(user: AuthModel): String {
@@ -41,13 +48,13 @@ class JwtService(
         val factory = KeyFactory.getInstance("RSA")
         val privateKey = factory.generatePrivate(pkcs8EncodedSpec)
 
-        val claims = mapOf(Pair("exp", expirationAccessGenerate().toString()), Pair("scope", "openid"))
+        val claims = mapOf(Pair("exp", expirationAccessGenerate().toString()), Pair("sub", user.uuid))
 
         return Jwts.builder().claims(claims).signWith(privateKey).compact()
     }
+
     @Transactional
-    suspend fun generateRefreshToken(user: AuthModel): Mono<String> {
-        logger.error("jwtRefresh")
+    fun generateRefreshToken(user: AuthModel): Mono<String> {
         val alphanumeric = ('A'..'Z') + ('a'..'z') + ('0'..'9')
         val length = 32
         val refreshToken = buildString {
@@ -58,10 +65,11 @@ class JwtService(
         val coroutineScope = CoroutineScope(Dispatchers.IO)
         coroutineScope.launch {
             withContext(Dispatchers.IO) {
-                logger.debug("Creating refresh token: $refreshToken, ${expirationRefreshGenerate()}")
+                refreshRepository.save(Refresh(null, refreshToken, user.uuid!!, expirationRefreshGenerate()))
+                    .awaitFirstOrNull()
+                //expirationRefreshGenerate()
             }
         }
-
         return refreshToken.toMono()
     }
 
@@ -72,11 +80,11 @@ class JwtService(
         return instant.plus(accessExpHours, ChronoUnit.HOURS).plus(accessExpMinutes, ChronoUnit.MINUTES).toEpochMilli()
     }
 
-    fun expirationRefreshGenerate(): Long {
+    fun expirationRefreshGenerate(): LocalDateTime {
         val local = LocalDateTime.now()
         val zoneId = ZoneId.of(zoneId)
         val instant = local.atZone(zoneId).toInstant()
-        return instant.plus(refreshExpDays, ChronoUnit.DAYS).toEpochMilli()
+        return LocalDateTime.ofInstant(instant.plus(refreshExpDays, ChronoUnit.DAYS), zoneId)
     }
 
     fun validateToken(authToken: String): Boolean {
@@ -96,7 +104,12 @@ class JwtService(
 
     fun extractAllClaims(token: String): Claims {
         try {
-            return Jwts.parser().verifyWith(SecretKeySpec(preparePublicKey().toByteArray(), "RSA")).build()
+            val key = preparePublicKey()
+            val factory = KeyFactory.getInstance("RSA")
+            val publicKey = factory.generatePublic(X509EncodedKeySpec(Base64.getDecoder().decode(key.toByteArray())))
+                //SecretKeySpec(preparePublicKey().toByteArray(), "RSA")
+
+            return Jwts.parser().verifyWith(publicKey).build()
                 .parseSignedClaims(token).payload
         } catch (e: IllegalArgumentException) {
             throw UnsignedTokenException("Failed to verify token")
