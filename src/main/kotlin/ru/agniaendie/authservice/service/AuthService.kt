@@ -1,9 +1,8 @@
 package ru.agniaendie.authservice.service
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.reactive.awaitFirstOrNull
-import kotlinx.coroutines.reactive.awaitLast
-import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -12,7 +11,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
-import reactor.kotlin.core.publisher.toMono
+import ru.agniaendie.authservice.exception.UsernameOrPasswordException
 import ru.agniaendie.authservice.logger
 import ru.agniaendie.authservice.model.AuthModel
 import ru.agniaendie.authservice.model.Role
@@ -20,11 +19,11 @@ import ru.agniaendie.authservice.model.request.AuthenticationAuthModelRequest
 import ru.agniaendie.authservice.model.request.CreateAuthModelRequest
 import ru.agniaendie.authservice.model.request.RefreshTokenRequest
 import ru.agniaendie.authservice.model.response.AuthenticateResponse
-import ru.agniaendie.authservice.model.response.Result
+import ru.agniaendie.authservice.model.response.exception.Error
 import ru.agniaendie.authservice.repository.AuthRepository
 import ru.agniaendie.authservice.repository.RefreshRepository
 import ru.agniaendie.authservice.security.service.JwtService
-import java.util.*
+import kotlin.math.log
 
 @Service
 class AuthService(
@@ -47,61 +46,76 @@ class AuthService(
         )
     }
 
-    suspend fun authenticate(request: AuthenticationAuthModelRequest): Result<ResponseEntity<AuthenticateResponse>> {
+    suspend fun authenticate(request: AuthenticationAuthModelRequest): ResponseEntity<Any> {
         try {
             val user = authRepository.findByUsername(request.username)
             var accessToken: String? = null
             var refreshToken: String? = null
 
             user.publishOn(Schedulers.boundedElastic()).doOnNext {
-                accessToken = jwtService.generateAccessToken(it)
-                runBlocking {
-                    refreshToken = jwtService.generateRefreshToken(it).awaitFirstOrNull()
+                if (passwordEncoder.matches(request.password, it.password)) {
+                    accessToken = jwtService.generateAccessToken(it)
+                    runBlocking {
+                        refreshToken = jwtService.generateRefreshToken(it).awaitFirstOrNull()
+                    }
+
                 }
-                logger.error("refresh: $refreshToken access: $accessToken ")
             }.awaitFirstOrNull()
 
-            logger.error("refresh: $refreshToken access: $accessToken ")
-            return Result.Success(
-                ResponseEntity(
+            if (accessToken != null && refreshToken != null) {
+                return ResponseEntity(
                     AuthenticateResponse(
                         accessToken,
                         refreshToken
                     ),
                     HttpStatus.OK
                 )
-            )
 
+            } else {
+                throw UsernameOrPasswordException("Invalid username or password")
+            }
+
+        } catch (e: UsernameOrPasswordException) {
+            return ResponseEntity(
+                Error(e.message ?: "Invalid username or password"),
+                HttpStatus.UNAUTHORIZED
+
+            )
         } catch (e: Exception) {
-            logger.error(e.message)
-            return Result.Success(
-                ResponseEntity(
-                    AuthenticateResponse("", ""),
-                    HttpStatus.UNAUTHORIZED
-                )
+            return ResponseEntity(
+                AuthenticateResponse("", ""),
+                HttpStatus.UNAUTHORIZED
+
             )
         }
     }
 
 
-//    @Transactional
-//    suspend fun refreshTokenRecreation(request: RefreshTokenRequest): Result<ResponseEntity<AuthenticateResponse>> {
-//        return try {
-//            var accessToken: String
-//            var refreshToken: String
-//            val refresh = withContext(Dispatchers.IO) {
-//                refreshRepository.findRefreshByToken(request.refreshToken).block()
-//            }
-//            val user = withContext(Dispatchers.IO) {
-//                authRepository.findByUuid(refresh!!.uuid).block()
-//            }
-//            withContext(Dispatchers.IO) {
-//                //accessToken = jwtService.generateRefreshToken(user!!)
-//                //refreshToken = jwtService.generateRefreshToken(user)
-//            }
-//            Result.Success(ResponseEntity(AuthenticateResponse(accessToken, refreshToken), HttpStatus.OK))
-//        } catch (e: Exception) {
-//            Result.Success(ResponseEntity(AuthenticateResponse("", ""), HttpStatus.UNAUTHORIZED))
-//        }
-//    }
+    suspend fun refreshTokenRecreation(request: RefreshTokenRequest): ResponseEntity<Any> {
+        try {
+            val refresh = refreshRepository.findRefreshByToken(request.refresh)
+                .flatMap { refresh ->
+                    authRepository.findByUuid(refresh.person)
+                        .publishOn(Schedulers.boundedElastic())
+                        .map { auth ->
+                            val accessToken = jwtService.generateAccessToken(auth)
+                            val refreshToken = jwtService.generateRefreshToken(auth).block()
+
+                            refreshRepository.deleteRefreshByUuid(refresh.uuid!!).subscribe()
+
+                            Pair(accessToken, refreshToken)
+                        }
+                }
+                .awaitFirstOrNull()
+
+            val accessToken = refresh?.first
+            val refreshToken = refresh?.second
+
+            return ResponseEntity(AuthenticateResponse(accessToken, refreshToken), HttpStatus.OK)
+        } catch (e: Exception) {
+            return ResponseEntity(Error("Failed to validate refresh token"), HttpStatus.UNAUTHORIZED)
+        }
+    }
+
+
 }
