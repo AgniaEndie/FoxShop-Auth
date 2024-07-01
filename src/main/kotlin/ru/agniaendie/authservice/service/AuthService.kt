@@ -1,7 +1,6 @@
 package ru.agniaendie.authservice.service
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -12,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import ru.agniaendie.authservice.exception.UsernameOrPasswordException
-import ru.agniaendie.authservice.logger
 import ru.agniaendie.authservice.model.AuthModel
 import ru.agniaendie.authservice.model.Role
 import ru.agniaendie.authservice.model.request.AuthenticationAuthModelRequest
@@ -23,7 +21,6 @@ import ru.agniaendie.authservice.model.response.exception.Error
 import ru.agniaendie.authservice.repository.AuthRepository
 import ru.agniaendie.authservice.repository.RefreshRepository
 import ru.agniaendie.authservice.security.service.JwtService
-import kotlin.math.log
 
 @Service
 class AuthService(
@@ -111,7 +108,12 @@ class AuthService(
             val accessToken = refresh?.first
             val refreshToken = refresh?.second
 
-            return ResponseEntity(AuthenticateResponse(accessToken, refreshToken), HttpStatus.OK)
+            if(accessToken != null && refreshToken != null) {
+                return ResponseEntity(AuthenticateResponse(accessToken, refreshToken), HttpStatus.OK)
+            }else{
+                return ResponseEntity(Error("Invalid refresh token"), HttpStatus.UNAUTHORIZED)
+            }
+
         } catch (e: Exception) {
             return ResponseEntity(Error("Failed to validate refresh token"), HttpStatus.UNAUTHORIZED)
         }
