@@ -5,7 +5,7 @@ import io.jsonwebtoken.Jwts
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.reactive.awaitFirstOrNull
+import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.withContext
 import lombok.extern.slf4j.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
@@ -21,13 +21,11 @@ import ru.agniaendie.authservice.model.Refresh
 import ru.agniaendie.authservice.repository.RefreshRepository
 import java.security.KeyFactory
 import java.security.spec.PKCS8EncodedKeySpec
-import java.security.spec.RSAPublicKeySpec
 import java.security.spec.X509EncodedKeySpec
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.util.*
-import javax.crypto.spec.SecretKeySpec
 
 @Service
 @Slf4j
@@ -54,7 +52,19 @@ class JwtService(
     }
 
     @Transactional
-    fun generateRefreshToken(user: AuthModel): Mono<String> {
+    fun generateRefreshToken(refreshString: String, user: AuthModel): Mono<Refresh> {
+        val coroutineScope = CoroutineScope(Dispatchers.IO)
+        val refresh = Refresh(null, refreshString, user.uuid!!, expirationRefreshGenerate())
+        coroutineScope.launch {
+            withContext(Dispatchers.IO) {
+                refreshRepository.save(refresh)
+                    .awaitFirst()
+            }
+        }
+        return refresh.toMono()
+    }
+
+    fun generateRefreshString(): String {
         val alphanumeric = ('A'..'Z') + ('a'..'z') + ('0'..'9')
         val length = 32
         val refreshToken = buildString {
@@ -62,16 +72,9 @@ class JwtService(
                 append(alphanumeric.random())
             }
         }
-        val coroutineScope = CoroutineScope(Dispatchers.IO)
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                refreshRepository.save(Refresh(null, refreshToken, user.uuid!!, expirationRefreshGenerate()))
-                    .awaitFirstOrNull()
-                //expirationRefreshGenerate()
-            }
-        }
-        return refreshToken.toMono()
+        return refreshToken
     }
+
 
     fun expirationAccessGenerate(): Long {
         val local = LocalDateTime.now()
@@ -107,7 +110,7 @@ class JwtService(
             val key = preparePublicKey()
             val factory = KeyFactory.getInstance("RSA")
             val publicKey = factory.generatePublic(X509EncodedKeySpec(Base64.getDecoder().decode(key.toByteArray())))
-                //SecretKeySpec(preparePublicKey().toByteArray(), "RSA")
+            //SecretKeySpec(preparePublicKey().toByteArray(), "RSA")
 
             return Jwts.parser().verifyWith(publicKey).build()
                 .parseSignedClaims(token).payload

@@ -53,7 +53,7 @@ class AuthService(
                 if (passwordEncoder.matches(request.password, it.password)) {
                     accessToken = jwtService.generateAccessToken(it)
                     runBlocking {
-                        refreshToken = jwtService.generateRefreshToken(it).awaitFirstOrNull()
+                        refreshToken = jwtService.generateRefreshToken(jwtService.generateRefreshString(),it).awaitFirstOrNull()!!.token
                     }
 
                 }
@@ -96,7 +96,7 @@ class AuthService(
                         .publishOn(Schedulers.boundedElastic())
                         .map { auth ->
                             val accessToken = jwtService.generateAccessToken(auth)
-                            val refreshToken = jwtService.generateRefreshToken(auth).block()
+                            val refreshToken = jwtService.generateRefreshToken(jwtService.generateRefreshString(),auth).block()
 
                             refreshRepository.deleteRefreshByUuid(refresh.uuid!!).subscribe()
 
@@ -109,7 +109,7 @@ class AuthService(
             val refreshToken = refresh?.second
 
             if(accessToken != null && refreshToken != null) {
-                return ResponseEntity(AuthenticateResponse(accessToken, refreshToken), HttpStatus.OK)
+                return ResponseEntity(AuthenticateResponse(accessToken, refreshToken.token), HttpStatus.OK)
             }else{
                 return ResponseEntity(Error("Invalid refresh token"), HttpStatus.UNAUTHORIZED)
             }
