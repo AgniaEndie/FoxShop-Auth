@@ -46,7 +46,7 @@ class JwtService(
         val factory = KeyFactory.getInstance("RSA")
         val privateKey = factory.generatePrivate(pkcs8EncodedSpec)
 
-        val claims = mapOf(Pair("exp", expirationAccessGenerate().toString()), Pair("sub", user.uuid))
+        val claims = mapOf(Pair("exp", expirationAccessGenerate().toString()), Pair("sub", user.uuid),Pair("role", user.role),Pair("aut",user.authorities))
 
         return Jwts.builder().claims(claims).signWith(privateKey).compact()
     }
