@@ -11,7 +11,6 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.access.AccessDeniedHandlerImpl
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
-import ru.agniaendie.authservice.logger
 import ru.agniaendie.authservice.security.entrypoint.AuthenticationEntryPoint
 import ru.agniaendie.authservice.security.filter.JwtFilter
 

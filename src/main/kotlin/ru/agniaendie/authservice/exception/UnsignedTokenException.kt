@@ -5,6 +5,4 @@ package ru.agniaendie.authservice.exception
  * @author AgniaEndie
  */
 
-class UnsignedTokenException(override var message:String) : Exception() {
-
-}
+class UnsignedTokenException(override var message:String) : Exception()
